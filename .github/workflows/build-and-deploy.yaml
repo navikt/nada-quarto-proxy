@@ -1,0 +1,59 @@
+name: build and push
+on: 
+  push:
+    branches:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment du kjører i
+        type: choice
+        options:
+          - dev
+          - prod
+        required: true
+
+jobs:
+  set-version:
+    name: Set version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: set version
+        id: set-version
+        run: echo ::set-output name=version::"$(date '+%Y-%m-%d')-$(git --no-pager log -1 --pretty=%h)"
+
+  build-and-deploy:
+    name: Build and deploy
+    runs-on: ubuntu-20.04
+    needs: set-version
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up environment
+      run: |
+        version=${{ needs.set-version.outputs.version }}
+        prefix=ghcr.io/${{ github.repository }}
+        echo "IMAGE=$prefix:$version" >> $GITHUB_ENV
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # Use commit-sha1 instead of tag for security concerns
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Dockerimage
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ env.IMAGE }}
+
+    - name: Deploy to dev-gcp
+      if: inputs.environment != 'prod'
+      uses: nais/deploy/actions/deploy@v1
+      env:
+        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+        CLUSTER: dev-gcp
+        RESOURCE: .nais/dev-gcp.yml
