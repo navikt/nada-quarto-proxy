@@ -55,6 +55,7 @@ func setupRoutes(router *gin.Engine, gcsClient *storage.Client, bucketName strin
 		qID := c.Param("id")
 		qFile := c.Param("file")
 		objPath := fmt.Sprintf("%v/%v", qID, strings.TrimLeft(qFile, "/"))
+		fmt.Println(objPath)
 
 		obj := gcsClient.Bucket(bucketName).Object(objPath)
 		data, err := obj.NewReader(c)
@@ -67,8 +68,7 @@ func setupRoutes(router *gin.Engine, gcsClient *storage.Client, bucketName strin
 
 	// todo: add PUT here nada-backend calls from graphql resolver?
 	// nais manifest does not allow to add access to a bucket that is already owned by another app
-	// therefore we must create a service account with read permission and inject a service account key
-	// for this app as nada-backend owns the bucket.
+	// therefore we must manually add permission to the iam sa
 }
 
 func findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
