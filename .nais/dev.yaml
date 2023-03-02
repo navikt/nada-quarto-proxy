@@ -1,7 +1,7 @@
 kind: "Application"
 apiVersion: "nais.io/v1alpha1"
 metadata:
-  name: nada-bucket-proxy
+  name: nada-quarto-proxy
   namespace: nada
   labels:
     team: nada
@@ -12,11 +12,6 @@ spec:
     value: "release"
   - name: GCS_QUARTO_BUCKET
     value: nada-quarto-storage-dev
-  - name: GOOGLE_APPLICATION_CREDENTIALS
-    value: /var/run/secrets/creds.json
-  filesFrom:
-  - mountPath: /var/run/secrets
-    secret: nada-bucket-proxy
   ingresses:
   - https://data.dev.intern.nav.no/quarto
   replicas:
