@@ -1,0 +1,19 @@
+kind: "Application"
+apiVersion: "nais.io/v1alpha1"
+metadata:
+  name: nada-quarto-proxy
+  namespace: nada
+  labels:
+    team: nada
+spec:
+  image: {{ image }}
+  env:
+  - name: GIN_MODE
+    value: "release"
+  - name: GCS_QUARTO_BUCKET
+    value: nada-quarto-storage-prod
+  ingresses:
+  - https://data.intern.nav.no/quarto
+  replicas:
+    min: 1
+    max: 2
