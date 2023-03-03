@@ -4,13 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 
 	"cloud.google.com/go/storage"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi"
 	"google.golang.org/api/iterator"
 )
 
@@ -18,59 +18,98 @@ type Config struct {
 	BucketName string
 }
 
+type API struct {
+	gcsClient  *storage.Client
+	bucketName string
+	router     *chi.Mux
+}
+
+func NewAPI(ctx context.Context, bucketName string) (*API, error) {
+	gcsClient, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	router := chi.NewRouter()
+	api := &API{
+		gcsClient:  gcsClient,
+		bucketName: bucketName,
+		router:     router,
+	}
+	api.setupRoutes(router)
+
+	return api, nil
+}
+
+func (a *API) setupRoutes(router *chi.Mux) {
+	router.Route("/quarto", func(r chi.Router) {
+		r.Get("/{id}", a.GetQuartoRedirect)
+		r.Route("/{id}/", func(r chi.Router) {
+			r.Get("/*", a.GetQuarto)
+		})
+	})
+}
+
 func main() {
 	cfg := Config{}
 	flag.StringVar(&cfg.BucketName, "bucket", os.Getenv("GCS_QUARTO_BUCKET"), "The quarto storage bucket")
-
 	ctx := context.Background()
 
-	router := gin.New()
-
-	gcsClient, err := storage.NewClient(ctx)
+	api, err := NewAPI(ctx, cfg.BucketName)
 	if err != nil {
 		panic(err)
 	}
 
-	setupRoutes(router, gcsClient, cfg.BucketName)
+	server := http.Server{
+		Addr:    "localhost:8080",
+		Handler: api.router,
+	}
 
-	if err := router.Run(); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		panic(err)
 	}
 }
 
-func setupRoutes(router *gin.Engine, gcsClient *storage.Client, bucketName string) {
-	router.GET("/quarto/:id", func(c *gin.Context) {
-		qID := c.Param("id")
+func (a *API) GetQuartoRedirect(w http.ResponseWriter, r *http.Request) {
+	qID := strings.TrimLeft(r.URL.Path, "/quarto")
 
-		objs := gcsClient.Bucket(bucketName).Objects(c, &storage.Query{Prefix: qID + "/"})
-		objPath, err := findIndexPage(qID, objs)
-		if err != nil {
-			c.JSON(http.StatusNotFound, map[string]string{"status": fmt.Sprintf("quarto with id %v not found", qID)})
-		}
+	objs := a.gcsClient.Bucket(a.bucketName).Objects(r.Context(), &storage.Query{Prefix: qID + "/"})
+	objPath, err := findIndexPage(qID, objs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-		c.Redirect(http.StatusSeeOther, fmt.Sprintf("/quarto/%v", objPath))
-	})
+	http.Redirect(w, r, objPath, http.StatusSeeOther)
+}
 
-	router.GET("/quarto/:id/*file", func(c *gin.Context) {
-		qID := c.Param("id")
-		qFile := c.Param("file")
-		objPath := fmt.Sprintf("%v/%v", qID, strings.TrimLeft(qFile, "/"))
+func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimLeft(r.URL.Path, "/quarto")
 
-		obj := gcsClient.Bucket(bucketName).Object(objPath)
-		data, err := obj.NewReader(c)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, map[string]string{"status": "internal server error"})
-			return
-		}
+	obj := a.gcsClient.Bucket(a.bucketName).Object(path)
+	reader, err := obj.NewReader(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-		setHeaders(c, qFile)
+	datab, err := ioutil.ReadAll(reader)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 
-		io.Copy(c.Writer, data)
-	})
+	switch {
+	case strings.HasSuffix(path, ".html"):
+		w.Header().Add("content-type", "text/html")
+	case strings.HasSuffix(path, ".css"):
+		w.Header().Add("content-type", "text/css")
+	case strings.HasSuffix(path, ".js"):
+		w.Header().Add("content-type", "application/javascript")
+	case strings.HasSuffix(path, ".json"):
+		w.Header().Add("content-type", "application/json")
+	}
 
-	// todo: add PUT here nada-backend calls from graphql resolver?
-	// nais manifest does not allow to add access to a bucket that is already owned by another app
-	// therefore we must manually add permission to the iam sa
+	w.Write(datab)
 }
 
 func findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
@@ -89,18 +128,5 @@ func findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
 		} else if strings.HasSuffix(o.Name, ".html") {
 			page = o.Name
 		}
-	}
-}
-
-func setHeaders(c *gin.Context, qFile string) {
-	switch {
-	case strings.HasSuffix(qFile, ".html"):
-		c.Header("Content-Type", "text/html")
-	case strings.HasSuffix(qFile, ".css"):
-		c.Header("Content-Type", "text/css")
-	case strings.HasSuffix(qFile, ".js"):
-		c.Header("Content-Type", "application/javascript")
-	case strings.HasSuffix(qFile, ".json"):
-		c.Header("Content-Type", "application/json")
 	}
 }
