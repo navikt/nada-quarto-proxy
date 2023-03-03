@@ -55,7 +55,6 @@ func setupRoutes(router *gin.Engine, gcsClient *storage.Client, bucketName strin
 		qID := c.Param("id")
 		qFile := c.Param("file")
 		objPath := fmt.Sprintf("%v/%v", qID, strings.TrimLeft(qFile, "/"))
-		fmt.Println(objPath)
 
 		obj := gcsClient.Bucket(bucketName).Object(objPath)
 		data, err := obj.NewReader(c)
@@ -82,7 +81,7 @@ func findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
 			return page, nil
 		}
 
-		if o.Name == qID+"/index.html" {
+		if strings.HasSuffix(o.Name, "/index.html") {
 			return o.Name, nil
 		} else if strings.HasSuffix(o.Name, ".html") {
 			page = o.Name
