@@ -45,6 +45,8 @@ func (a *API) setupRoutes(router *chi.Mux) {
 	router.Route("/quarto", func(r chi.Router) {
 		r.Get("/{id}", a.GetQuartoRedirect)
 		r.Route("/{id}/", func(r chi.Router) {
+			// todo: fix trailing slash (e.g. <id>/) reroute
+			// r.Get("/", a.GetQuartoRedirect)
 			r.Get("/*", a.GetQuarto)
 		})
 	})
@@ -71,7 +73,8 @@ func main() {
 }
 
 func (a *API) GetQuartoRedirect(w http.ResponseWriter, r *http.Request) {
-	qID := strings.TrimLeft(r.URL.Path, "/quarto")
+	pathParts := strings.Split(r.URL.Path, "/")
+	qID := pathParts[2]
 
 	objs := a.gcsClient.Bucket(a.bucketName).Objects(r.Context(), &storage.Query{Prefix: qID + "/"})
 	objPath, err := findIndexPage(qID, objs)
