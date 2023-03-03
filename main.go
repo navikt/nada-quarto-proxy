@@ -62,6 +62,9 @@ func setupRoutes(router *gin.Engine, gcsClient *storage.Client, bucketName strin
 			c.JSON(http.StatusInternalServerError, map[string]string{"status": "internal server error"})
 			return
 		}
+
+		setHeaders(c, qFile)
+
 		io.Copy(c.Writer, data)
 	})
 
@@ -86,5 +89,18 @@ func findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
 		} else if strings.HasSuffix(o.Name, ".html") {
 			page = o.Name
 		}
+	}
+}
+
+func setHeaders(c *gin.Context, qFile string) {
+	switch {
+	case strings.HasSuffix(qFile, ".html"):
+		c.Header("Content-Type", "text/html")
+	case strings.HasSuffix(qFile, ".css"):
+		c.Header("Content-Type", "text/css")
+	case strings.HasSuffix(qFile, ".js"):
+		c.Header("Content-Type", "application/javascript")
+	case strings.HasSuffix(qFile, ".json"):
+		c.Header("Content-Type", "application/json")
 	}
 }
