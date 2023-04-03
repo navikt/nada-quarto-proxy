@@ -47,7 +47,7 @@ func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, er
 }
 
 func (a *API) setupRoutes(router *chi.Mux) {
-	router.Route("/quarto", func(r chi.Router) {
+	router.Route("/quarto-odata", func(r chi.Router) {
 		r.Use(a.QuartoMiddleware)
 		r.Get("/*", a.GetQuarto)
 	})
