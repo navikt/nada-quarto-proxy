@@ -11,9 +11,9 @@ spec:
   - name: GIN_MODE
     value: "release"
   - name: GCS_QUARTO_BUCKET
-    value: nada-quarto-storage-dev
+    value: nada-quarto-odata-dev
   ingresses:
-  - https://data.dev.intern.nav.no/quarto
+  - https://data.dev.intern.nav.no/quarto-odata
   replicas:
     min: 1
     max: 2
