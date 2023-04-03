@@ -16,5 +16,5 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
       - name: Upload files
-        directory: _site
+        working-directory: _site
         run: cp -r * gs://nada-quarto-odata-dev/123/
