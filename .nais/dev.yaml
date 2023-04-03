@@ -17,3 +17,8 @@ spec:
   replicas:
     min: 1
     max: 2
+  gcp:
+    buckets:
+      name: nada-quarto-odata-dev
+      publicAccessPrevention: true
+      cascadingDelete: false
