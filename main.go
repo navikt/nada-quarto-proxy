@@ -133,6 +133,8 @@ func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("content-type", "application/javascript")
 	case strings.HasSuffix(path, ".json"):
 		w.Header().Add("content-type", "application/json")
+	case strings.HasSuffix(path, ".svg"):
+		w.Header().Add("content-type", "image/svg+xml")
 	}
 
 	w.Write(datab)
