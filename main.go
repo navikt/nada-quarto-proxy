@@ -104,6 +104,8 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("redirect", objPath)
+
 	http.Redirect(w, r, objPath, http.StatusSeeOther)
 }
 
