@@ -7,10 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"cloud.google.com/go/storage"
 	"github.com/go-chi/chi"
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/api/iterator"
 )
 
@@ -22,9 +25,10 @@ type API struct {
 	gcsClient  *storage.Client
 	bucketName string
 	router     *chi.Mux
+	log        *logrus.Entry
 }
 
-func NewAPI(ctx context.Context, bucketName string) (*API, error) {
+func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, error) {
 	gcsClient, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, err
@@ -35,6 +39,7 @@ func NewAPI(ctx context.Context, bucketName string) (*API, error) {
 		gcsClient:  gcsClient,
 		bucketName: bucketName,
 		router:     router,
+		log:        log,
 	}
 	api.setupRoutes(router)
 
@@ -42,13 +47,9 @@ func NewAPI(ctx context.Context, bucketName string) (*API, error) {
 }
 
 func (a *API) setupRoutes(router *chi.Mux) {
-	router.Route("/quarto", func(r chi.Router) {
-		r.Get("/{id}", a.GetQuartoRedirect)
-		r.Route("/{id}/", func(r chi.Router) {
-			// todo: fix trailing slash (e.g. <id>/) reroute
-			// r.Get("/", a.GetQuartoRedirect)
-			r.Get("/*", a.GetQuarto)
-		})
+	router.Route("/quarto-odata", func(r chi.Router) {
+		r.Use(a.QuartoMiddleware)
+		r.Get("/*", a.GetQuarto)
 	})
 }
 
@@ -56,8 +57,9 @@ func main() {
 	cfg := Config{}
 	flag.StringVar(&cfg.BucketName, "bucket", os.Getenv("GCS_QUARTO_BUCKET"), "The quarto storage bucket")
 	ctx := context.Background()
+	log := logrus.New()
 
-	api, err := NewAPI(ctx, cfg.BucketName)
+	api, err := NewAPI(ctx, cfg.BucketName, log.WithField("subsystem", "api"))
 	if err != nil {
 		panic(err)
 	}
@@ -72,22 +74,43 @@ func main() {
 	}
 }
 
-func (a *API) GetQuartoRedirect(w http.ResponseWriter, r *http.Request) {
-	pathParts := strings.Split(r.URL.Path, "/")
-	qID := pathParts[2]
+func (a *API) QuartoMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		regex, _ := regexp.Compile(`[\n]*\.[\n]*`) // check if object path has file extension
+		if !regex.MatchString(r.URL.Path) {
+			a.Redirect(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
+	qID, err := getIDFromPath(r, 2)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+	r.URL.Path = "/quarto-odata/"
 
 	objs := a.gcsClient.Bucket(a.bucketName).Objects(r.Context(), &storage.Query{Prefix: qID + "/"})
-	objPath, err := findIndexPage(qID, objs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	objPath, err := a.findIndexPage(qID, objs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
+	fmt.Println("redirect", objPath)
+
 	http.Redirect(w, r, objPath, http.StatusSeeOther)
 }
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimLeft(r.URL.Path, "/quarto")
+	path := strings.TrimPrefix(r.URL.Path, "/quarto-odata/")
 
 	obj := a.gcsClient.Bucket(a.bucketName).Object(path)
 	reader, err := obj.NewReader(r.Context())
@@ -110,12 +133,14 @@ func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("content-type", "application/javascript")
 	case strings.HasSuffix(path, ".json"):
 		w.Header().Add("content-type", "application/json")
+	case strings.HasSuffix(path, ".svg"):
+		w.Header().Add("content-type", "image/svg+xml")
 	}
 
 	w.Write(datab)
 }
 
-func findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
+func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
 	page := ""
 	for {
 		o, err := objs.Next()
@@ -125,11 +150,29 @@ func findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
 			}
 			return page, nil
 		}
+		if err != nil {
+			a.log.WithError(err).Error("searching for index page in bucket")
+			return "", fmt.Errorf("index page not found")
+		}
 
-		if strings.HasSuffix(o.Name, "/index.html") {
+		if strings.HasSuffix(strings.ToLower(o.Name), "/index.html") {
 			return o.Name, nil
-		} else if strings.HasSuffix(o.Name, ".html") {
+		} else if strings.HasSuffix(strings.ToLower(o.Name), ".html") {
 			page = o.Name
 		}
 	}
+}
+
+func getIDFromPath(r *http.Request, idPos int) (string, error) {
+	parts := strings.Split(r.URL.Path, "/")
+	if idPos > len(parts)-1 {
+		return "", fmt.Errorf("unable to extract id from url path")
+	}
+
+	id, err := uuid.Parse(parts[idPos])
+	if err != nil {
+		return "", err
+	}
+
+	return id.String(), nil
 }

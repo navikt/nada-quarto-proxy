@@ -11,9 +11,14 @@ spec:
   - name: GIN_MODE
     value: "release"
   - name: GCS_QUARTO_BUCKET
-    value: nada-quarto-storage-prod
+    value: nada-quarto-odata-prod
   ingresses:
-  - https://data.intern.nav.no/quarto
+  - https://data.intern.nav.no/omverdensanalyse
   replicas:
     min: 1
     max: 2
+  gcp:
+    buckets:
+      - name: nada-quarto-odata-prod
+        publicAccessPrevention: true
+        cascadingDelete: false
