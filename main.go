@@ -12,7 +12,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/go-chi/chi"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/iterator"
 )
@@ -168,10 +167,5 @@ func getIDFromPath(r *http.Request, idPos int) (string, error) {
 		return "", fmt.Errorf("unable to extract id from url path")
 	}
 
-	id, err := uuid.Parse(parts[idPos])
-	if err != nil {
-		return "", err
-	}
-
-	return id.String(), nil
+	return parts[idPos], nil
 }
