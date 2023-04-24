@@ -160,7 +160,7 @@ func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, e
 		}
 
 		if strings.HasSuffix(strings.ToLower(o.Name), "/index.html") {
-			return o.Name, nil
+			return "omverdensanalyse/" + o.Name, nil
 		} else if strings.HasSuffix(strings.ToLower(o.Name), ".html") {
 			page = "omverdensanalyse/" + o.Name
 		}
