@@ -47,7 +47,7 @@ func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, er
 }
 
 func (a *API) setupRoutes(router *chi.Mux) {
-	router.Route("/quarto-odata", func(r chi.Router) {
+	router.Route("/omverdensanalyse", func(r chi.Router) {
 		r.Use(a.QuartoMiddleware)
 		r.Get("/*", a.GetQuarto)
 	})
@@ -87,11 +87,10 @@ func (a *API) QuartoMiddleware(next http.Handler) http.Handler {
 }
 
 func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
-	qID, err := getIDFromPath(r, 2)
+	qID, err := getIDFromPath(r, 1)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	r.URL.Path = "/quarto-odata/"
 
 	objs := a.gcsClient.Bucket(a.bucketName).Objects(r.Context(), &storage.Query{Prefix: qID + "/"})
 	if err != nil {
@@ -110,7 +109,7 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/quarto-odata/")
+	path := strings.TrimPrefix(r.URL.Path, "/")
 
 	obj := a.gcsClient.Bucket(a.bucketName).Object(path)
 	reader, err := obj.NewReader(r.Context())
