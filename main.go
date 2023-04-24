@@ -100,9 +100,10 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("redirect", objPath)
+	fmt.Println("redirect")
+	path := strings.TrimPrefix(objPath, a.quartoUUID+"/")
 
-	http.Redirect(w, r, objPath, http.StatusSeeOther)
+	http.Redirect(w, r, "omverdensanalyse/"+path, http.StatusSeeOther)
 }
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
