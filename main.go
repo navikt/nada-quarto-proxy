@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/storage"
@@ -109,32 +110,36 @@ func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("get quarto", r.URL.Path)
 
 	path := a.convertPath(r.URL.Path)
-	obj := a.gcsClient.Bucket(a.bucketName).Object(a.quartoUUID + "/" + path)
-	reader, err := obj.NewReader(r.Context())
+	attr, objBytes, err := a.GetObject(r.Context(), path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Add("content-type", attr.ContentType)
+	w.Header().Add("content-length", strconv.Itoa(int(attr.Size)))
+	w.Header().Add("content-encoding", attr.ContentEncoding)
+
+	w.Write(objBytes)
+}
+
+func (a *API) GetObject(ctx context.Context, path string) (*storage.ObjectAttrs, []byte, error) {
+	obj := a.gcsClient.Bucket(a.bucketName).Object(path)
+	reader, err := obj.NewReader(ctx)
+	if err != nil {
+		return nil, []byte{}, err
+	}
 
 	datab, err := ioutil.ReadAll(reader)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, []byte{}, err
 	}
 
-	switch {
-	case strings.HasSuffix(path, ".html"):
-		w.Header().Add("content-type", "text/html")
-	case strings.HasSuffix(path, ".css"):
-		w.Header().Add("content-type", "text/css")
-	case strings.HasSuffix(path, ".js"):
-		w.Header().Add("content-type", "application/javascript")
-	case strings.HasSuffix(path, ".json"):
-		w.Header().Add("content-type", "application/json")
-	case strings.HasSuffix(path, ".svg"):
-		w.Header().Add("content-type", "image/svg+xml")
+	attr, err := obj.Attrs(ctx)
+	if err != nil {
+		return nil, []byte{}, err
 	}
 
-	w.Write(datab)
+	return attr, datab, nil
 }
 
 func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, error) {
@@ -169,5 +174,6 @@ func (a *API) convertPath(urlPath string) string {
 		}
 		out = out + "/" + p
 	}
+	fmt.Println("path converted", out)
 	return out
 }
