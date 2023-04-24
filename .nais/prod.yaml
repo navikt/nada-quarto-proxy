@@ -16,6 +16,7 @@ spec:
     value: c41cb620-546f-4001-b2c4-1db5168d202b
   ingresses:
   - https://data.intern.nav.no/omverdensanalyse
+  - https://data.nav.no/omverdensanalyse
   replicas:
-    min: 1
-    max: 2
+    min: 2
+    max: 3
