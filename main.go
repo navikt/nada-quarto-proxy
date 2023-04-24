@@ -103,7 +103,7 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	path := strings.TrimPrefix(objPath, a.quartoUUID+"/")
 
-	http.Redirect(w, r, "omverdensanalyse/"+path, http.StatusSeeOther)
+	http.Redirect(w, r, path, http.StatusSeeOther)
 }
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +150,7 @@ func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, e
 			if page == "" {
 				return "", fmt.Errorf("could not find html for id %v", qID)
 			}
-			return page, nil
+			return "omverdensanalyse/" + page, nil
 		}
 		if err != nil {
 			a.log.WithError(err).Error("searching for index page in bucket")
@@ -160,7 +160,7 @@ func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, e
 		if strings.HasSuffix(strings.ToLower(o.Name), "/index.html") {
 			return o.Name, nil
 		} else if strings.HasSuffix(strings.ToLower(o.Name), ".html") {
-			page = o.Name
+			page = "omverdensanalyse/" + o.Name
 		}
 	}
 }
