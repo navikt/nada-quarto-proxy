@@ -25,6 +25,7 @@ type API struct {
 	bucketName string
 	router     *chi.Mux
 	log        *logrus.Entry
+	quartoUUID string
 }
 
 func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, error) {
@@ -33,12 +34,18 @@ func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, er
 		return nil, err
 	}
 
+	quartoUUID := os.Getenv("QUARTO_UUID")
+	if quartoUUID == "" {
+		return nil, fmt.Errorf("no quarto UUID configured %v", quartoUUID)
+	}
+
 	router := chi.NewRouter()
 	api := &API{
 		gcsClient:  gcsClient,
 		bucketName: bucketName,
 		router:     router,
 		log:        log,
+		quartoUUID: quartoUUID,
 	}
 	api.setupRoutes(router)
 
@@ -86,17 +93,8 @@ func (a *API) QuartoMiddleware(next http.Handler) http.Handler {
 }
 
 func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
-	qID, err := getIDFromPath(r, 1)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-
-	objs := a.gcsClient.Bucket(a.bucketName).Objects(r.Context(), &storage.Query{Prefix: qID + "/"})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-	objPath, err := a.findIndexPage(qID, objs)
+	objs := a.gcsClient.Bucket(a.bucketName).Objects(r.Context(), &storage.Query{Prefix: a.quartoUUID + "/"})
+	objPath, err := a.findIndexPage(a.quartoUUID, objs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -108,9 +106,9 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/")
+	path := strings.TrimPrefix(r.URL.Path, "/omverdensanalyse/")
 
-	obj := a.gcsClient.Bucket(a.bucketName).Object(path)
+	obj := a.gcsClient.Bucket(a.bucketName).Object(a.quartoUUID + "/" + path)
 	reader, err := obj.NewReader(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
