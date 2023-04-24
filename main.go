@@ -107,7 +107,8 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("get quarto", r.URL.Path)
-	path := strings.TrimPrefix(r.URL.Path, "/omverdensanalyse/")
+	parts := strings.Split(r.URL.Path, "/")
+	path := parts[len(parts)-1]
 
 	obj := a.gcsClient.Bucket(a.bucketName).Object(a.quartoUUID + "/" + path)
 	reader, err := obj.NewReader(r.Context())
