@@ -107,9 +107,8 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("get quarto", r.URL.Path)
-	parts := strings.Split(r.URL.Path, "/")
-	path := parts[len(parts)-1]
 
+	path := a.convertPath(r.URL.Path)
 	obj := a.gcsClient.Bucket(a.bucketName).Object(a.quartoUUID + "/" + path)
 	reader, err := obj.NewReader(r.Context())
 	if err != nil {
@@ -161,11 +160,14 @@ func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, e
 	}
 }
 
-func getIDFromPath(r *http.Request, idPos int) (string, error) {
-	parts := strings.Split(r.URL.Path, "/")
-	if idPos > len(parts)-1 {
-		return "", fmt.Errorf("unable to extract id from url path")
+func (a *API) convertPath(urlPath string) string {
+	parts := strings.Split(urlPath, "/")
+	out := a.quartoUUID
+	for _, p := range parts {
+		if p == "omverdensanalyse" {
+			continue
+		}
+		out = out + "/" + p
 	}
-
-	return parts[idPos], nil
+	return out
 }
