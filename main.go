@@ -101,6 +101,8 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("index page", objPath)
+
 	path := strings.TrimPrefix(objPath, a.quartoUUID+"/")
 
 	http.Redirect(w, r, path, http.StatusSeeOther)
