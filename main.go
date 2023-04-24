@@ -100,16 +100,12 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	fmt.Println("index page", objPath)
-
+	r.URL.Path = "/"
 	http.Redirect(w, r, objPath, http.StatusSeeOther)
 }
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("get quarto", r.URL.Path)
-
-	path := a.convertPath(r.URL.Path)
+	path := a.quartoUUID + "/" + strings.TrimPrefix(r.URL.Path, "/omverdensanalyse/")
 	attr, objBytes, err := a.GetObject(r.Context(), path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -150,7 +146,7 @@ func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, e
 			if page == "" {
 				return "", fmt.Errorf("could not find html for id %v", qID)
 			}
-			return "omverdensanalyse/" + page, nil
+			return page, nil
 		}
 		if err != nil {
 			a.log.WithError(err).Error("searching for index page in bucket")
@@ -163,17 +159,4 @@ func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, e
 			page = "omverdensanalyse/" + strings.TrimPrefix(o.Name, a.quartoUUID+"/")
 		}
 	}
-}
-
-func (a *API) convertPath(urlPath string) string {
-	parts := strings.Split(urlPath, "/")
-	out := a.quartoUUID
-	for _, p := range parts {
-		if p == "omverdensanalyse" || p == "" {
-			continue
-		}
-		out = out + "/" + p
-	}
-	fmt.Println("path converted", out)
-	return out
 }
