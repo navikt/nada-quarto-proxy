@@ -50,13 +50,13 @@ jobs:
         push: true
         tags: ${{ env.IMAGE }}
 
-    - name: Deploy to dev-gcp
-      if: inputs.environment != 'prod'
-      uses: nais/deploy/actions/deploy@v1
-      env:
-        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: dev-gcp
-        RESOURCE: .nais/dev.yaml
+    # - name: Deploy to dev-gcp
+    #   if: inputs.environment != 'prod'
+    #   uses: nais/deploy/actions/deploy@v1
+    #   env:
+    #     APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+    #     CLUSTER: dev-gcp
+    #     RESOURCE: .nais/dev.yaml
     - name: Deploy to prod-gcp
       if: github.ref == 'refs/heads/main' && inputs.environment != 'dev'
       uses: nais/deploy/actions/deploy@v1
