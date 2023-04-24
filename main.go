@@ -169,7 +169,7 @@ func (a *API) convertPath(urlPath string) string {
 	parts := strings.Split(urlPath, "/")
 	out := a.quartoUUID
 	for _, p := range parts {
-		if p == "omverdensanalyse" {
+		if p == "omverdensanalyse" || p == "" {
 			continue
 		}
 		out = out + "/" + p
