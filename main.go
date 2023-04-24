@@ -172,7 +172,7 @@ func (a *API) convertPath(urlPath string) string {
 		if p == "omverdensanalyse" {
 			continue
 		}
-		out = out + p
+		out = out + "/" + p
 	}
 	fmt.Println("path converted", out)
 	return out
