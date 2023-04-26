@@ -13,7 +13,7 @@ spec:
   - name: GCS_QUARTO_BUCKET
     value: nada-quarto-odata-dev
   ingresses:
-  - https://data.dev.intern.nav.no/quarto-odata
+  - https://data.intern.dev.nav.no/quarto-odata
   replicas:
     min: 1
     max: 2
