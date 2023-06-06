@@ -14,6 +14,8 @@ spec:
     value: nada-quarto-odata-dev
   - name: QUARTO_UUID
     value: c41cb620-546f-4001-b2c4-1db5168d202b
+  - name: QUARTO_PATH
+    value: "omverdensanalyse"
   ingresses:
   - https://data.intern.nav.no/omverdensanalyse
   - https://data.nav.no/omverdensanalyse

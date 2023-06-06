@@ -27,6 +27,7 @@ type API struct {
 	router     *chi.Mux
 	log        *logrus.Entry
 	quartoUUID string
+	quartoPath string
 }
 
 func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, error) {
@@ -40,6 +41,11 @@ func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, er
 		return nil, fmt.Errorf("no quarto UUID configured %v", quartoUUID)
 	}
 
+	quartoPath := os.Getenv("QUARTO_PATH")
+	if quartoPath == "" {
+		return nil, fmt.Errorf("no quarto path configured %v", quartoPath)
+	}
+
 	router := chi.NewRouter()
 	api := &API{
 		gcsClient:  gcsClient,
@@ -47,6 +53,7 @@ func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, er
 		router:     router,
 		log:        log,
 		quartoUUID: quartoUUID,
+		quartoPath: quartoPath,
 	}
 	api.setupRoutes(router)
 
@@ -54,7 +61,7 @@ func NewAPI(ctx context.Context, bucketName string, log *logrus.Entry) (*API, er
 }
 
 func (a *API) setupRoutes(router *chi.Mux) {
-	router.Route("/omverdensanalyse", func(r chi.Router) {
+	router.Route("/"+a.quartoPath, func(r chi.Router) {
 		r.Use(a.QuartoMiddleware)
 		r.Get("/*", a.GetQuarto)
 	})
@@ -105,7 +112,7 @@ func (a *API) Redirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) GetQuarto(w http.ResponseWriter, r *http.Request) {
-	path := a.quartoUUID + "/" + strings.TrimPrefix(r.URL.Path, "/omverdensanalyse/")
+	path := a.quartoUUID + "/" + strings.TrimPrefix(r.URL.Path, fmt.Sprintf("/%v/", a.quartoPath))
 	attr, objBytes, err := a.GetObject(r.Context(), path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -154,9 +161,9 @@ func (a *API) findIndexPage(qID string, objs *storage.ObjectIterator) (string, e
 		}
 
 		if strings.HasSuffix(strings.ToLower(o.Name), "/index.html") {
-			return "omverdensanalyse/" + strings.TrimPrefix(o.Name, a.quartoUUID+"/"), nil
+			return a.quartoPath + "/" + strings.TrimPrefix(o.Name, a.quartoUUID+"/"), nil
 		} else if strings.HasSuffix(strings.ToLower(o.Name), ".html") {
-			page = "omverdensanalyse/" + strings.TrimPrefix(o.Name, a.quartoUUID+"/")
+			page = a.quartoPath + "/" + strings.TrimPrefix(o.Name, a.quartoUUID+"/")
 		}
 	}
 }
