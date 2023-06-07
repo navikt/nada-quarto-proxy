@@ -11,7 +11,7 @@ spec:
   - name: GCS_QUARTO_BUCKET
     value: ovind_bucket
   - name: QUARTO_UUID
-    value: ""
+    value: "dokumentasjonsrapport"
   - name: QUARTO_PATH
     value: "overgangsindikator"
   ingresses:
