@@ -1,0 +1,21 @@
+kind: "Application"
+apiVersion: "nais.io/v1alpha1"
+metadata:
+  name: quarto-gki
+  namespace: nada
+  labels:
+    team: nada
+spec:
+  image: {{ image }}
+  env:
+  - name: GCS_QUARTO_BUCKET
+    value: gki_veil_bucket
+  - name: QUARTO_UUID
+    value: "GKI_notat"
+  - name: QUARTO_PATH
+    value: "GKI_notat"
+  ingresses:
+  - https://data.intern.nav.no/overgangsindikator
+  replicas:
+    min: 1
+    max: 2

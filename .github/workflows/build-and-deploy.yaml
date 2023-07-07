@@ -65,3 +65,11 @@ jobs:
         APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
         CLUSTER: prod-gcp
         RESOURCE: .nais/overgangsindikator.yaml
+
+    - name: Deploy gki to prod-gcp
+        if: github.ref == 'refs/heads/main' && inputs.environment != 'dev'
+        uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: prod-gcp
+          RESOURCE: .nais/gki.yaml
