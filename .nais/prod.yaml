@@ -19,6 +19,7 @@ spec:
   ingresses:
   - https://data.intern.nav.no/omverdensanalyse
   - https://data.nav.no/omverdensanalyse
+  - https://data.nav.no
   replicas:
     min: 2
     max: 3
