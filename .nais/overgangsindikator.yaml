@@ -8,14 +8,14 @@ metadata:
 spec:
   image: {{ image }}
   env:
-  - name: GCS_QUARTO_BUCKET
-    value: ovind_bucket
-  - name: QUARTO_UUID
-    value: "dokumentasjonsrapport"
-  - name: QUARTO_PATH
-    value: "overgangsindikator"
+    - name: GCS_QUARTO_BUCKET
+      value: ovind_bucket
+    - name: QUARTO_UUID
+      value: "dokumentasjonsrapport"
+    - name: QUARTO_PATH
+      value: "overgangsindikator"
   ingresses:
-  - https://data.intern.nav.no/overgangsindikator
+    - https://data.intern.nav.no/overgangsindikator
   replicas:
     min: 1
     max: 2

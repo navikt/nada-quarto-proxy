@@ -1,7 +1,7 @@
 kind: "Application"
 apiVersion: "nais.io/v1alpha1"
 metadata:
-  name: nada-quarto-proxy
+  name: quarto-omverdensanalyse
   namespace: nada
   labels:
     team: nada
@@ -19,3 +19,8 @@ spec:
   replicas:
     min: 2
     max: 3
+  gcp:
+    buckets:
+      - name: quarto-omverdensanalyse
+        publicAccessPrevention: true
+        cascadingDelete: false

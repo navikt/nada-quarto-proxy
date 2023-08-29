@@ -1,75 +1,35 @@
-name: build and push
-on: 
-  push:
-    branches:
-      - '*'
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: Environment du kjører i
-        type: choice
-        options:
-          - dev
-          - prod
-        required: true
+name: Build, push, and deploy
+
+on: [push]
 
 jobs:
-  set-version:
-    name: Set version
+  build:
+    name: Build and push Docker container
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     outputs:
-      version: ${{ steps.set-version.outputs.version }}
+      image: ${{ steps.docker-build-push.outputs.image }}
     steps:
       - uses: actions/checkout@v3
-      - name: set version
-        id: set-version
-        run: echo ::set-output name=version::"$(date '+%Y-%m-%d')-$(git --no-pager log -1 --pretty=%h)"
+      - name: Push docker image to GAR
+        uses: nais/docker-build-push@v0
+        id: docker-build-push
+        with:
+          team: nada
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }} # Provided as Organization Secret
+          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }} # Provided as Organization Variable
 
-  build-and-deploy:
-    name: Build and deploy
-    runs-on: ubuntu-20.04
-    needs: set-version
+  deploy:
+    name: Deploy to NAIS
+    needs: build
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up environment
-      run: |
-        version=${{ needs.set-version.outputs.version }}
-        prefix=ghcr.io/${{ github.repository }}
-        echo "IMAGE=$prefix:$version" >> $GITHUB_ENV
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # Use commit-sha1 instead of tag for security concerns
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and push Dockerimage
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{ env.IMAGE }}
-
-    # - name: Deploy to prod-gcp
-    #   if: github.ref == 'refs/heads/main' && inputs.environment != 'dev'
-    #   uses: nais/deploy/actions/deploy@v1
-    #   env:
-    #     APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-    #     CLUSTER: prod-gcp
-    #     RESOURCE: .nais/prod.yaml
-
-    - name: Deploy overgangsindikator to prod-gcp
-      if: github.ref == 'refs/heads/main' && inputs.environment != 'dev'
-      uses: nais/deploy/actions/deploy@v1
-      env:
-        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: prod-gcp
-        RESOURCE: .nais/overgangsindikator.yaml
-
-    - name: Deploy gki to prod-gcp
-      if: github.ref == 'refs/heads/main' && inputs.environment != 'dev'
-      uses: nais/deploy/actions/deploy@v1
-      env:
-        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: prod-gcp
-        RESOURCE: .nais/gki.yaml
+      - uses: actions/checkout@v3
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: prod-gcp
+          RESOURCE: .nais/gki.yaml,.nais/omverdensanalyse.yaml,.nais/overgangsindikator.yaml
+          VAR: image=${{ needs.build.outputs.image }}
