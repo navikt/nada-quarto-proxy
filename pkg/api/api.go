@@ -56,6 +56,12 @@ func NewRouter(ctx context.Context) (*chi.Mux, error) {
 }
 
 func (a *API) setupRoutes(router *chi.Mux) {
+	if a.quartoPath == "omverdensanalyse" {
+		router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/"+a.quartoPath, http.StatusSeeOther)
+		})
+	}
+
 	router.Route("/"+a.quartoPath, func(r chi.Router) {
 		r.Use(a.quartoMiddleware)
 		r.Get("/*", a.GetQuarto)
