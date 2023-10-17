@@ -1,0 +1,21 @@
+kind: "Application"
+apiVersion: "nais.io/v1alpha1"
+metadata:
+  name: quarto-tada-playbook
+  namespace: nada
+  labels:
+    team: nada
+spec:
+  image: {{ image }}
+  env:
+    - name: GCS_QUARTO_BUCKET
+      value: tada_playbook
+    - name: QUARTO_UUID
+      value: "tada"
+    - name: QUARTO_PATH
+      value: "tada"
+  ingresses:
+    - https://data.intern.nav.no/tada
+  replicas:
+    min: 1
+    max: 2
