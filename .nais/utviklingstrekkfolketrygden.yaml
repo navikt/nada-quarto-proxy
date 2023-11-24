@@ -16,6 +16,7 @@ spec:
       value: "utviklingstrekkfolketrygden"
   ingresses:
     - https://data.intern.nav.no/utviklingstrekkfolketrygden
+    - https://data.nav.no/utviklingstrekkfolketrygden
   replicas:
     min: 1
     max: 2
