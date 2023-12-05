@@ -11,11 +11,11 @@ spec:
     - name: GCS_QUARTO_BUCKET
       value: gki_veil_bucket
     - name: QUARTO_UUID
-      value: "GKI_notat"
+      value: "KI"
     - name: QUARTO_PATH
-      value: "GKI_notat"
+      value: "KI"
   ingresses:
-    - https://data.intern.nav.no/GKI_notat
+    - https://data.intern.nav.no/KI
   replicas:
     min: 1
     max: 2
