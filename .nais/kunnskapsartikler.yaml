@@ -1,0 +1,21 @@
+kind: "Application"
+apiVersion: "nais.io/v1alpha1"
+metadata:
+  name: quarto-nks-kunnskapsartikler
+  namespace: nada
+  labels:
+    team: nada
+spec:
+  image: {{ image }}
+  env:
+    - name: GCS_QUARTO_BUCKET
+      value: quarto_kunnskapsartikler
+    - name: QUARTO_UUID
+      value: "kunnskapsartikler_book"
+    - name: QUARTO_PATH
+      value: "kunnskapsartikler_book"
+  ingresses:
+    - https://data.intern.nav.no/nks-kunnskapsartikler
+  replicas:
+    min: 1
+    max: 2
