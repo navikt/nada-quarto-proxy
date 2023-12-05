@@ -11,9 +11,9 @@ spec:
     - name: GCS_QUARTO_BUCKET
       value: quarto_kunnskapsartikler
     - name: QUARTO_UUID
-      value: "kunnskapsartikler_book"
+      value: "nks-kunnskapsartikler"
     - name: QUARTO_PATH
-      value: "kunnskapsartikler_book"
+      value: "nks-kunnskapsartikler"
   ingresses:
     - https://data.intern.nav.no/nks-kunnskapsartikler
   replicas:
