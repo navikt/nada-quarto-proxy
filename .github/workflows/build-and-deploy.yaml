@@ -34,5 +34,5 @@ jobs:
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-gcp
-          RESOURCE: .nais/gki.yaml,.nais/omverdensanalyse.yaml,.nais/overgangsindikator.yaml,.nais/tada.yaml,.nais/utviklingstrekkfolketrygden.yaml,.nais/kunnskapsartikler.yaml
+          RESOURCE: .nais/gki.yaml,.nais/omverdensanalyse.yaml,.nais/overgangsindikator.yaml,.nais/tada.yaml,.nais/utviklingstrekkfolketrygden.yaml
           VAR: image=${{ needs.build.outputs.image }}
