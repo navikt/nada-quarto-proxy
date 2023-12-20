@@ -28,11 +28,13 @@ jobs:
     name: Deploy to NAIS
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v3
-      - uses: nais/deploy/actions/deploy@v1
+      - uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-gcp
           RESOURCE: .nais/gki.yaml,.nais/omverdensanalyse.yaml,.nais/overgangsindikator.yaml,.nais/tada.yaml,.nais/utviklingstrekkfolketrygden.yaml
           VAR: image=${{ needs.build.outputs.image }}
