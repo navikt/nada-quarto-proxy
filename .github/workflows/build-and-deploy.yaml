@@ -36,5 +36,5 @@ jobs:
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: prod-gcp
-          RESOURCE: .nais/gki.yaml,.nais/omverdensanalyse.yaml,.nais/overgangsindikator.yaml,.nais/tada.yaml,.nais/utviklingstrekkfolketrygden.yaml
+          RESOURCE: .nais/overgangsindikator.yaml,.nais/tada.yaml
           VAR: image=${{ needs.build.outputs.image }}
