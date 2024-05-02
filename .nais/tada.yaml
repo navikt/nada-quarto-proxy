@@ -15,7 +15,7 @@ spec:
     - name: QUARTO_PATH
       value: "tada"
   ingresses:
-    - https://data.intern.nav.no/tada
+    - https://data.ansatt.nav.no/tada
   replicas:
     min: 1
     max: 2
