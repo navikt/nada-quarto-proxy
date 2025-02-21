@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/storage"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"google.golang.org/api/iterator"
 )
 
