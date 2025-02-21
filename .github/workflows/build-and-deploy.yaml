@@ -21,8 +21,6 @@ jobs:
         id: docker-build-push
         with:
           team: nada
-          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }} # Provided as Organization Secret
-          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }} # Provided as Organization Variable
 
   deploy:
     name: Deploy to NAIS
