@@ -1,7 +1,7 @@
 kind: "Application"
 apiVersion: "nais.io/v1alpha1"
 metadata:
-  name: quarto-tada-playbook
+  name: quarto-example-name
   namespace: nada
   labels:
     team: nada
@@ -9,13 +9,13 @@ spec:
   image: {{ image }}
   env:
     - name: GCS_QUARTO_BUCKET
-      value: tada_playbook
+      value: example-bucket-name
     - name: QUARTO_UUID
-      value: "tada"
+      value: "example-uuid"
     - name: QUARTO_PATH
-      value: "tada"
+      value: "example-path"
   ingresses:
-    - https://data.ansatt.nav.no/tada
+    - https://data.ansatt.nav.no/example-path
   replicas:
     min: 1
     max: 2
